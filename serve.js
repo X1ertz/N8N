@@ -1,21 +1,25 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware เพื่อรับ JSON จาก LINE Webhook
 app.use(bodyParser.json());
 
-// Webhook endpoint
-app.post('/webhook', (req, res) => {
-  console.log('Received Webhook:', JSON.stringify(req.body, null, 2));
+app.post('/webhook', async (req, res) => {
+  console.log('LINE Webhook:', req.body);
 
-  // ตอบกลับ 200 OK เพื่อให้ LINE รู้ว่า Webhook สำเร็จ
-  res.status(200).send('OK');
+  try {
+    // ส่งต่อข้อมูลทั้งหมดไปยัง n8n
+    await axios.post('http://localhost:5678/webhook/line', req.body);
+    res.status(200).send('Forwarded to n8n');
+  } catch (error) {
+    console.error('Error forwarding to n8n:', error.message);
+    res.status(500).send('Error forwarding');
+  }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
